@@ -179,11 +179,11 @@ def stats_card(data: dict, t: dict) -> str:
     active = sum(1 for _, c in data["days"] if c)
     rows = [
         ("Contributions", f'{data["total"]:,}'),
-        ("Commits", f'{data["commits"]:,}'),
+        ("Public commits", f'{data["commits"]:,}'),
         ("Pull requests", f'{data["prs"]:,}'),
         ("Active days", f"{active} / {len(data['days'])}"),
-        ("Current streak", f"{current} days"),
-        ("Longest streak", f"{longest} days"),
+        ("Current streak", f"{current} day" + ("" if current == 1 else "s")),
+        ("Longest streak", f"{longest} day" + ("" if longest == 1 else "s")),
     ]
     body = []
     for i, (label, value) in enumerate(rows):
