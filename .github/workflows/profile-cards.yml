@@ -1,0 +1,57 @@
+name: Profile cards
+
+# Rebuilds the stats, languages, activity and snake SVGs and commits them to
+# assets/generated/, so the profile README serves its own images.
+on:
+  schedule:
+    - cron: "17 3 * * *"   # daily, 03:17 UTC
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/**"
+      - ".github/workflows/profile-cards.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: profile-cards
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Stats, languages and calendar cards
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Optional: a fine-grained PAT with read-only "Contents" on your
+          # repos, so private repos count toward the language card.
+          METRICS_TOKEN: ${{ secrets.METRICS_TOKEN }}
+        run: python scripts/build_cards.py
+
+      - name: Contribution snake
+        uses: Platane/snk/svg-only@v3
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          outputs: |
+            assets/generated/snake-light.svg?color_snake=#0f766e&color_dots=#ebedf0,#b2ece5,#5fcfc1,#14a394,#0b5f57
+            assets/generated/snake-dark.svg?palette=github-dark&color_snake=#2dd4bf&color_dots=#161b22,#0f3d3a,#14706a,#1fa99c,#5eead4
+
+      - name: Commit changed cards
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/generated
+          if git diff --cached --quiet; then
+            echo "No changes."
+          else
+            git commit -m "Update profile cards"
+            git push
+          fi
